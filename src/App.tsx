@@ -43,7 +43,7 @@ export default function App() {
       body: JSON.stringify({ init_data: initData }),
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Telegram auth failed");
+        if (!res.ok) throw new Error(`Telegram auth failed, status=${res.status}`, );
         return res.json() as Promise<TelegramUser>;
       })
       .then((data) => {
