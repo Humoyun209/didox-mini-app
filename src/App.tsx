@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import LoginPage from "./pages/LoginPage";
 import CreateDocumentPage from "./pages/CreateDocumentPage";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://your-api.com/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://bot.test-for-test.uz/api";
 
 interface TelegramUser {
   id: number;
