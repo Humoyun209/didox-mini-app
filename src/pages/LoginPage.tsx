@@ -2,16 +2,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-
-interface TelegramUser {
-  id: number;
-  first_name: string;
-  telegram_id: number;
-}
+import { API_BASE } from "../App";
 
 interface LoginPageProps {
-  user: TelegramUser;
-  apiBase: string;
   onSuccess: () => void;
 }
 
@@ -26,7 +19,7 @@ const schema = z.object({
 
 type LoginFormValues = z.infer<typeof schema>;
 
-export default function LoginPage({ user, apiBase, onSuccess }: LoginPageProps) {
+export default function LoginPage({ onSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -40,14 +33,14 @@ export default function LoginPage({ user, apiBase, onSuccess }: LoginPageProps) 
     setLoading(true);
     setServerError(null);
     try {
-      const res = await fetch(`${apiBase}/didox/auth/`, {
+      const res = await fetch(`${API_BASE}/didox/auth/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { detail?: string };
+        const err = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(err.detail || "Неверный логин или пароль");
       }
       onSuccess();
@@ -60,6 +53,7 @@ export default function LoginPage({ user, apiBase, onSuccess }: LoginPageProps) 
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
+      {/* Header */}
       <div className="pt-14 pb-8 px-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
@@ -70,17 +64,11 @@ export default function LoginPage({ user, apiBase, onSuccess }: LoginPageProps) 
           </div>
           <span className="text-white font-bold text-lg tracking-tight">Didox</span>
         </div>
-
-        <div>
-          <h1 className="text-white text-2xl font-bold tracking-tight leading-tight">
-            Вход в аккаунт
-          </h1>
-          <p className="text-zinc-500 text-sm mt-1.5">
-            {user?.first_name ? `Привет, ${user.first_name} 👋` : "Введите данные Didox для продолжения"}
-          </p>
-        </div>
+        <h1 className="text-white text-2xl font-bold tracking-tight leading-tight">Вход в аккаунт</h1>
+        <p className="text-zinc-500 text-sm mt-1.5">Введите данные Didox для продолжения</p>
       </div>
 
+      {/* Form */}
       <div className="flex-1 px-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Field label="ИНН / ПИНФЛ" error={errors.stir?.message}>
@@ -115,6 +103,8 @@ export default function LoginPage({ user, apiBase, onSuccess }: LoginPageProps) 
     </div>
   );
 }
+
+// ── Shared UI ──────────────────────────────────────────────────────────────
 
 interface FieldProps {
   label: string;

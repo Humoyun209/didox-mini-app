@@ -2,19 +2,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { API_BASE } from "../App";
 import { inputClass } from "./LoginPage";
 
-
-
-interface TelegramUser {
-  id: number;
-  first_name: string;
-  telegram_id: number;
-}
+// ── Types & Constants ──────────────────────────────────────────────────────
 
 interface CreateDocumentPageProps {
-  user: TelegramUser;
-  apiBase: string;
   onLogout: () => void;
 }
 
@@ -35,6 +28,8 @@ const DOCUMENT_TYPES: DocumentType[] = [
   { value: "additional_agreement", label: "Қўшимча келишув" },
 ];
 
+// ── Schema ─────────────────────────────────────────────────────────────────
+
 const schema = z.object({
   tin_or_pinfl: z
     .string()
@@ -49,14 +44,14 @@ const schema = z.object({
   document_type: z.string().optional(),
   contract_number: z.string().optional(),
   contract_date: z.string().optional(),
-  file: z
-    .custom<FileList>()
-    .refine((f) => f && f.length > 0, "Выберите файл"),
+  file: z.custom<FileList>().refine((f) => f && f.length > 0, "Выберите файл"),
 });
 
 type CreateDocumentFormValues = z.infer<typeof schema>;
 
-export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDocumentPageProps) {
+// ── Component ──────────────────────────────────────────────────────────────
+
+export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -72,7 +67,6 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
   const onSubmit = async (data: CreateDocumentFormValues) => {
     setLoading(true);
     setServerError(null);
-
     try {
       const formData = new FormData();
       if (data.file?.[0]) formData.append("file", data.file[0]);
@@ -84,14 +78,14 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
       if (data.contract_date) formData.append("contract_date", data.contract_date);
       if (data.tin_or_pinfl) formData.append("tin_or_pinfl", data.tin_or_pinfl);
 
-      const res = await fetch(`${apiBase}/create/document/`, {
+      const res = await fetch(`${API_BASE}/create/document/`, {
         method: "POST",
         credentials: "include",
         body: formData,
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { detail?: string };
+        const err = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(err.detail || "Ошибка при создании документа");
       }
 
@@ -108,6 +102,7 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
+      {/* Sticky header */}
       <div className="sticky top-0 z-10 bg-zinc-950/95 backdrop-blur border-b border-zinc-800/60 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30">
@@ -116,12 +111,7 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
               <polyline points="14 2 14 8 20 8" />
             </svg>
           </div>
-          <div>
-            <p className="text-white font-bold text-sm leading-none">Создать документ</p>
-            {user?.first_name && (
-              <p className="text-zinc-500 text-xs mt-0.5">{user.first_name}</p>
-            )}
-          </div>
+          <p className="text-white font-bold text-sm leading-none">Создать документ</p>
         </div>
         <button
           onClick={onLogout}
@@ -136,6 +126,7 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
         </button>
       </div>
 
+      {/* Success toast */}
       {success && (
         <div className="mx-4 mt-4 bg-emerald-500/15 border border-emerald-500/30 rounded-xl px-4 py-3 flex items-center gap-3">
           <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
@@ -147,56 +138,34 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
         </div>
       )}
 
+      {/* Form */}
       <div className="flex-1 px-6 py-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-
           <SectionLabel label="Получатель" />
 
           <Field label="ИНН / ПИНФЛ получателя" error={errors.tin_or_pinfl?.message}>
-            <input
-              {...register("tin_or_pinfl")}
-              inputMode="numeric"
-              placeholder="123456789"
-              className={inputClass(!!errors.tin_or_pinfl)}
-            />
+            <input {...register("tin_or_pinfl")} inputMode="numeric" placeholder="123456789" className={inputClass(!!errors.tin_or_pinfl)} />
           </Field>
 
           <SectionLabel label="Сведения о документе" />
 
           <Field label="Номер документа *" error={errors.document_number?.message}>
-            <input
-              {...register("document_number")}
-              placeholder="DOC-001"
-              className={inputClass(!!errors.document_number)}
-            />
+            <input {...register("document_number")} placeholder="DOC-001" className={inputClass(!!errors.document_number)} />
           </Field>
 
           <Field label="Дата документа *" error={errors.document_date?.message}>
-            <input
-              {...register("document_date")}
-              type="date"
-              className={`${inputClass(!!errors.document_date)} [color-scheme:dark]`}
-            />
+            <input {...register("document_date")} type="date" className={`${inputClass(!!errors.document_date)} [color-scheme:dark]`} />
           </Field>
 
           <Field label="Название документа" error={errors.document_name?.message}>
-            <input
-              {...register("document_name")}
-              placeholder="Необязательно"
-              className={inputClass(!!errors.document_name)}
-            />
+            <input {...register("document_name")} placeholder="Необязательно" className={inputClass(!!errors.document_name)} />
           </Field>
 
           <Field label="Тип документа" error={errors.document_type?.message}>
-            <select
-              {...register("document_type")}
-              className={`${inputClass(!!errors.document_type)} appearance-none`}
-            >
+            <select {...register("document_type")} className={`${inputClass(!!errors.document_type)} appearance-none`}>
               <option value="" className="bg-zinc-900">Выберите тип</option>
               {DOCUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value} className="bg-zinc-900">
-                  {t.label}
-                </option>
+                <option key={t.value} value={t.value} className="bg-zinc-900">{t.label}</option>
               ))}
             </select>
           </Field>
@@ -204,31 +173,17 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
           <SectionLabel label="Договор (необязательно)" />
 
           <Field label="Номер договора" error={errors.contract_number?.message}>
-            <input
-              {...register("contract_number")}
-              placeholder="CNT-001"
-              className={inputClass(!!errors.contract_number)}
-            />
+            <input {...register("contract_number")} placeholder="CNT-001" className={inputClass(!!errors.contract_number)} />
           </Field>
 
           <Field label="Дата договора" error={errors.contract_date?.message}>
-            <input
-              {...register("contract_date")}
-              type="date"
-              className={`${inputClass(!!errors.contract_date)} [color-scheme:dark]`}
-            />
+            <input {...register("contract_date")} type="date" className={`${inputClass(!!errors.contract_date)} [color-scheme:dark]`} />
           </Field>
 
           <SectionLabel label="Файл" />
 
           <Field label="Прикрепить файл *" error={errors.file?.message as string | undefined}>
-            <label
-              className={`flex items-center gap-3 cursor-pointer w-full bg-zinc-900 border rounded-xl px-4 py-3.5 transition-all ${
-                errors.file
-                  ? "border-red-500/60"
-                  : "border-zinc-800 hover:border-emerald-500/50"
-              }`}
-            >
+            <label className={`flex items-center gap-3 cursor-pointer w-full bg-zinc-900 border rounded-xl px-4 py-3.5 transition-all ${errors.file ? "border-red-500/60" : "border-zinc-800 hover:border-emerald-500/50"}`}>
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -237,11 +192,10 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                {fileName ? (
-                  <p className="text-emerald-400 text-sm font-medium truncate">{fileName}</p>
-                ) : (
-                  <p className="text-zinc-500 text-sm">Нажмите для выбора файла</p>
-                )}
+                {fileName
+                  ? <p className="text-emerald-400 text-sm font-medium truncate">{fileName}</p>
+                  : <p className="text-zinc-500 text-sm">Нажмите для выбора файла</p>
+                }
               </div>
               <input
                 type="file"
@@ -292,12 +246,12 @@ export default function CreateDocumentPage({ user, apiBase, onLogout }: CreateDo
   );
 }
 
+// ── Shared UI ──────────────────────────────────────────────────────────────
+
 function SectionLabel({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 pt-1">
-      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-widest whitespace-nowrap">
-        {label}
-      </span>
+      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-widest whitespace-nowrap">{label}</span>
       <div className="flex-1 h-px bg-zinc-800" />
     </div>
   );
