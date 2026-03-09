@@ -3,7 +3,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { API_BASE } from "../App";
-import TelegramDebug from "../components/TelegramDebug";
 
 interface LoginPageProps {
   onSuccess: () => void;
@@ -102,7 +101,7 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
         <p className="text-center text-zinc-600 text-xs">Powered by Didox · ЭДО платформа</p>
       </div>
 
-      <TelegramDebug />
+
     </div>
   );
 }
