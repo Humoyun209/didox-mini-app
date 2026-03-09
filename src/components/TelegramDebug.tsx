@@ -150,6 +150,43 @@ export default function TelegramDebug() {
                   value={`${authResult.statusCode ?? ""} ${authResult.status === "ok" ? "✅ OK" : "❌ Error"}`}
                   valueClass={authResult.status === "ok" ? "text-emerald-400" : "text-red-400"}
                 />
+
+                {/* If backend returned debug info, show it nicely */}
+                {authResult.response &&
+                  typeof authResult.response === "object" &&
+                  (authResult.response as Record<string, unknown>).debug && (() => {
+                    const dbg = (authResult.response as Record<string, unknown>).debug as Record<string, unknown>;
+                    const hashMatch = dbg.hash_from_telegram === dbg.hash_computed;
+                    return (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-zinc-500 text-xs font-mono uppercase tracking-widest">Backend debug</p>
+
+                        <Row label="bot_token_set" value={String(dbg.bot_token_set)} valueClass={dbg.bot_token_set ? "text-emerald-400" : "text-red-400"} mono />
+                        <Row label="bot_token_length" value={String(dbg.bot_token_length)} mono />
+                        <Row label="parsed_fields" value={(dbg.parsed_fields as string[]).join(", ")} mono />
+
+                        <div className="mt-1">
+                          <p className="text-zinc-500 text-xs font-mono mb-1">data_check_string:</p>
+                          <div className="font-mono text-xs text-zinc-300 bg-zinc-900 rounded p-2 break-all whitespace-pre-wrap leading-relaxed">
+                            {String(dbg.data_check_string)}
+                          </div>
+                        </div>
+
+                        <div className={`rounded-lg p-2 border ${hashMatch ? "border-emerald-500/40 bg-emerald-900/10" : "border-red-500/40 bg-red-900/10"}`}>
+                          <p className={`text-xs font-mono font-bold mb-1 ${hashMatch ? "text-emerald-400" : "text-red-400"}`}>
+                            {hashMatch ? "✅ Hashes match" : "❌ Hash mismatch"}
+                          </p>
+                          <p className="text-zinc-500 text-xs font-mono">from telegram:</p>
+                          <p className="font-mono text-xs text-zinc-300 break-all">{String(dbg.hash_from_telegram)}</p>
+                          <p className="text-zinc-500 text-xs font-mono mt-1">computed:</p>
+                          <p className="font-mono text-xs text-zinc-300 break-all">{String(dbg.hash_computed)}</p>
+                        </div>
+                      </div>
+                    );
+                  })()
+                }
+
+                {/* Raw response */}
                 <div className="mt-2 font-mono text-xs text-zinc-300 break-all leading-relaxed bg-zinc-900 rounded-lg p-3">
                   {JSON.stringify(authResult.response ?? authResult.error, null, 2)}
                 </div>
