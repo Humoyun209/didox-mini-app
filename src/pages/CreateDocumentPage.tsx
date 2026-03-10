@@ -178,6 +178,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
               </div>
               <input
                 type="file"
+                accept="application/pdf"
                 className="hidden"
                 {...register("file")}
                 onChange={(e) => {
