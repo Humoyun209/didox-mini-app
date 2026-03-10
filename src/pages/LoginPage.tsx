@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { API_BASE, type AuthTokens } from "../utils/consts";
 import { authFetch } from "../utils/auth-fetch";
-import TelegramDebug from "../components/TelegramDebug";
+// import TelegramDebug from "../components/TelegramDebug";
 
 interface LoginPageProps {
   tokens: AuthTokens;
