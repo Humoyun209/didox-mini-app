@@ -109,7 +109,7 @@ export default function LoginPage({ tokens, onTokensRefreshed, onAuthFailed, onS
         <p className="text-center text-zinc-600 text-xs">Powered by Didox · ЭДО платформа</p>
       </div>
 
-      <TelegramDebug tokens={tokens} />
+      {/* <TelegramDebug tokens={tokens} /> */}
     </div>
   );
 }
