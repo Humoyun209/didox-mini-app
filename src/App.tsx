@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import LoginPage from "./pages/LoginPage";
 import CreateDocumentPage from "./pages/CreateDocumentPage";
+import { clearTokens, loadTokens, saveTokens } from "./utils/auth";
+import { API_BASE, type AuthTokens } from "./utils/consts";
 
-export const API_BASE = import.meta.env.VITE_API_BASE || "https://bot.tavis.uz/api";
+
+
 
 export default function App() {
   const [page, setPage] = useState<"login" | "create">("login");
-  const [tgLoading, setTgLoading] = useState(true);
+  const [tokens, setTokens] = useState(() => loadTokens());
+  const [tgLoading, setTgLoading] = useState(() => loadTokens() === null);
   const [tgError, setTgError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,19 +23,35 @@ export default function App() {
     fetch(`${API_BASE}/telegram/auth/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ init_data: tg?.initData || "" }),
     })
       .then((res) => {
         if (!res.ok) throw new Error(`Telegram auth failed: ${res.status}`);
-        return res.json();
+        return res.json() as Promise<{ access: string; refresh: string }>;
       })
-      .then(() => setTgLoading(false))
+      .then((data) => {
+        const t = { access: data.access, refresh: data.refresh };
+        saveTokens(t);
+        setTokens(t);
+        setTgLoading(false);
+      })
       .catch((e: Error) => {
         setTgError(e.message);
         setTgLoading(false);
       });
   }, []);
+
+  const handleTokensRefreshed = (t: AuthTokens) => {
+    saveTokens(t);
+    setTokens(t);
+  };
+
+  const handleAuthFailed = () => {
+    clearTokens();
+    setTokens(null);
+    setPage("login");
+    setTgError("Сессия истекла, перезапустите приложение");
+  };
 
   if (tgLoading) {
     return (
@@ -59,8 +79,22 @@ export default function App() {
   }
 
   if (page === "login") {
-    return <LoginPage onSuccess={() => setPage("create")} />;
+    return (
+      <LoginPage
+        tokens={tokens!}
+        onTokensRefreshed={handleTokensRefreshed}
+        onAuthFailed={handleAuthFailed}
+        onSuccess={() => setPage("create")}
+      />
+    );
   }
 
-  return <CreateDocumentPage onLogout={() => setPage("login")} />;
+  return (
+    <CreateDocumentPage
+      tokens={tokens!}
+      onTokensRefreshed={handleTokensRefreshed}
+      onAuthFailed={handleAuthFailed}
+      onLogout={() => setPage("login")}
+    />
+  );
 }

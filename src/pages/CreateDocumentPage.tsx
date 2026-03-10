@@ -2,21 +2,20 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { API_BASE } from "../App";
 import { inputClass } from "./LoginPage";
+import { API_BASE, type AuthTokens } from "../utils/consts";
+import { authFetch } from "../utils/auth-fetch";
 
 // ── Types & Constants ──────────────────────────────────────────────────────
 
 interface CreateDocumentPageProps {
+  tokens: AuthTokens;
+  onTokensRefreshed: (tokens: AuthTokens) => void;
+  onAuthFailed: () => void;
   onLogout: () => void;
 }
 
-interface DocumentType {
-  value: string;
-  label: string;
-}
-
-const DOCUMENT_TYPES: DocumentType[] = [
+const DOCUMENT_TYPES = [
   { value: "comparison_act", label: "Солиштирма далолатнома" },
   { value: "letter", label: "Хат" },
   { value: "contract", label: "Шартнома" },
@@ -47,24 +46,21 @@ const schema = z.object({
   file: z.custom<FileList>().refine((f) => f && f.length > 0, "Выберите файл"),
 });
 
-type CreateDocumentFormValues = z.infer<typeof schema>;
+type FormValues = z.infer<typeof schema>;
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps) {
+export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFailed, onLogout }: CreateDocumentPageProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateDocumentFormValues>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+  });
 
-  const onSubmit = async (data: CreateDocumentFormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setLoading(true);
     setServerError(null);
     try {
@@ -78,11 +74,13 @@ export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps
       if (data.contract_date) formData.append("contract_date", data.contract_date);
       if (data.tin_or_pinfl) formData.append("tin_or_pinfl", data.tin_or_pinfl);
 
-      const res = await fetch(`${API_BASE}/create/document/`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+      const res = await authFetch(
+        `${API_BASE}/create/document/`,
+        { method: "POST", body: formData },
+        tokens,
+        onTokensRefreshed,
+        onAuthFailed
+      );
 
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { detail?: string };
@@ -102,7 +100,7 @@ export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
-      {/* Sticky header */}
+      {/* Header */}
       <div className="sticky top-0 z-10 bg-zinc-950/95 backdrop-blur border-b border-zinc-800/60 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30">
@@ -142,25 +140,20 @@ export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps
       <div className="flex-1 px-6 py-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <SectionLabel label="Получатель" />
-
           <Field label="ИНН / ПИНФЛ получателя" error={errors.tin_or_pinfl?.message}>
             <input {...register("tin_or_pinfl")} inputMode="numeric" placeholder="123456789" className={inputClass(!!errors.tin_or_pinfl)} />
           </Field>
 
           <SectionLabel label="Сведения о документе" />
-
           <Field label="Номер документа *" error={errors.document_number?.message}>
             <input {...register("document_number")} placeholder="DOC-001" className={inputClass(!!errors.document_number)} />
           </Field>
-
           <Field label="Дата документа *" error={errors.document_date?.message}>
             <input {...register("document_date")} type="date" className={`${inputClass(!!errors.document_date)} [color-scheme:dark]`} />
           </Field>
-
           <Field label="Название документа" error={errors.document_name?.message}>
             <input {...register("document_name")} placeholder="Необязательно" className={inputClass(!!errors.document_name)} />
           </Field>
-
           <Field label="Тип документа" error={errors.document_type?.message}>
             <select {...register("document_type")} className={`${inputClass(!!errors.document_type)} appearance-none`}>
               <option value="" className="bg-zinc-900">Выберите тип</option>
@@ -171,17 +164,14 @@ export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps
           </Field>
 
           <SectionLabel label="Договор (необязательно)" />
-
           <Field label="Номер договора" error={errors.contract_number?.message}>
             <input {...register("contract_number")} placeholder="CNT-001" className={inputClass(!!errors.contract_number)} />
           </Field>
-
           <Field label="Дата договора" error={errors.contract_date?.message}>
             <input {...register("contract_date")} type="date" className={`${inputClass(!!errors.contract_date)} [color-scheme:dark]`} />
           </Field>
 
           <SectionLabel label="Файл" />
-
           <Field label="Прикрепить файл *" error={errors.file?.message as string | undefined}>
             <label className={`flex items-center gap-3 cursor-pointer w-full bg-zinc-900 border rounded-xl px-4 py-3.5 transition-all ${errors.file ? "border-red-500/60" : "border-zinc-800 hover:border-emerald-500/50"}`}>
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
@@ -194,8 +184,7 @@ export default function CreateDocumentPage({ onLogout }: CreateDocumentPageProps
               <div className="flex-1 min-w-0">
                 {fileName
                   ? <p className="text-emerald-400 text-sm font-medium truncate">{fileName}</p>
-                  : <p className="text-zinc-500 text-sm">Нажмите для выбора файла</p>
-                }
+                  : <p className="text-zinc-500 text-sm">Нажмите для выбора файла</p>}
               </div>
               <input
                 type="file"

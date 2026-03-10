@@ -2,9 +2,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { API_BASE } from "../App";
+import { API_BASE, type AuthTokens } from "../utils/consts";
+import { authFetch } from "../utils/auth-fetch";
 
 interface LoginPageProps {
+  tokens: AuthTokens;
+  onTokensRefreshed: (tokens: AuthTokens) => void;
+  onAuthFailed: () => void;
   onSuccess: () => void;
 }
 
@@ -19,30 +23,35 @@ const schema = z.object({
 
 type LoginFormValues = z.infer<typeof schema>;
 
-export default function LoginPage({ onSuccess }: LoginPageProps) {
+export default function LoginPage({ tokens, onTokensRefreshed, onAuthFailed, onSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormValues>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
+    resolver: zodResolver(schema),
+  });
 
   const onSubmit = async (data: LoginFormValues) => {
     setLoading(true);
     setServerError(null);
     try {
-      const res = await fetch(`${API_BASE}/didox/auth/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
+      const res = await authFetch(
+        `${API_BASE}/didox/auth/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        },
+        tokens,
+        onTokensRefreshed,
+        onAuthFailed
+      );
+
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(err.detail || "Неверный логин или пароль");
       }
+
       onSuccess();
     } catch (e) {
       setServerError((e as Error).message);
@@ -53,7 +62,6 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
-      {/* Header */}
       <div className="pt-14 pb-8 px-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
@@ -68,7 +76,6 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
         <p className="text-zinc-500 text-sm mt-1.5">Введите данные Didox для продолжения</p>
       </div>
 
-      {/* Form */}
       <div className="flex-1 px-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Field label="ИНН / ПИНФЛ" error={errors.stir?.message}>
@@ -100,8 +107,6 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
       <div className="pb-8 px-6">
         <p className="text-center text-zinc-600 text-xs">Powered by Didox · ЭДО платформа</p>
       </div>
-
-
     </div>
   );
 }
@@ -155,9 +160,7 @@ function SubmitButton({ loading, label, loadingLabel }: SubmitButtonProps) {
           <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           {loadingLabel}
         </span>
-      ) : (
-        label
-      )}
+      ) : label}
     </button>
   );
 }
