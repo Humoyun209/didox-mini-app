@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { API_BASE, type AuthTokens } from "../utils/consts";
 import { authFetch } from "../utils/auth-fetch";
+import TelegramDebug from "../components/TelegramDebug";
 
 interface LoginPageProps {
   tokens: AuthTokens;
@@ -107,6 +108,8 @@ export default function LoginPage({ tokens, onTokensRefreshed, onAuthFailed, onS
       <div className="pb-8 px-6">
         <p className="text-center text-zinc-600 text-xs">Powered by Didox · ЭДО платформа</p>
       </div>
+
+      <TelegramDebug tokens={tokens} />
     </div>
   );
 }
