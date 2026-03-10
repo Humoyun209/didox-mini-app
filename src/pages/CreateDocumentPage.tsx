@@ -124,17 +124,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
         </button>
       </div>
 
-      {/* Success toast */}
-      {success && (
-        <div className="mx-4 mt-4 bg-emerald-500/15 border border-emerald-500/30 rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <p className="text-emerald-400 text-sm font-medium">Документ успешно отправлен!</p>
-        </div>
-      )}
+      
 
       {/* Form */}
       <div className="flex-1 px-6 py-6">
@@ -204,6 +194,18 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
                 <span className="text-red-400 text-xs font-bold">!</span>
               </div>
               <p className="text-red-400 text-sm">{serverError}</p>
+            </div>
+          )}
+
+          {/* Success toast */}
+          {success && (
+            <div className="mx-4 mt-4 bg-emerald-500/15 border border-emerald-500/30 rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <p className="text-emerald-400 text-sm font-medium">Документ успешно отправлен!</p>
             </div>
           )}
 
