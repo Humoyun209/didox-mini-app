@@ -1,25 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import LoginPage from "./pages/LoginPage";
 import CreateDocumentPage from "./pages/CreateDocumentPage";
-import { clearTokens, loadTokens, saveTokens } from "./utils/auth";
+import { saveTokens, clearTokens } from "./utils/auth";
 import { API_BASE, type AuthTokens } from "./utils/consts";
 
-
-
+type AppState = "loading" | "didox_login" | "app" | "error";
 
 export default function App() {
-  const [page, setPage] = useState<"login" | "create">("login");
-  const [tokens, setTokens] = useState<AuthTokens | null>(() => loadTokens());
-  const [tgLoading, setTgLoading] = useState(() => loadTokens() === null);
-  const [tgError, setTgError] = useState<string | null>(null);
+  const [state, setState] = useState<AppState>("loading");
+  const [tokens, setTokens] = useState<AuthTokens | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  // 🚀 ВСЕГДА делаем Telegram auth при старте
   useEffect(() => {
-    // Skip Telegram auth if we already have valid tokens
-    if (tokens) {
-      return;
-    }
-
     const tg = window.Telegram?.WebApp;
+
     if (tg) {
       tg.ready();
       tg.expand();
@@ -32,64 +27,79 @@ export default function App() {
     })
       .then((res) => {
         if (!res.ok) throw new Error(`Telegram auth failed: ${res.status}`);
-        return res.json() as Promise<{ access: string; refresh: string }>;
+        return res.json();
       })
       .then((data) => {
         const t = { access: data.access, refresh: data.refresh };
-        saveTokens(t);
+
+        saveTokens(t); // можно оставить, но не критично
         setTokens(t);
-        setTgLoading(false);
+
+        // 👉 проверяем Didox авторизацию
+        const hasDidox = localStorage.getItem("didox_auth") === "true";
+
+        if (hasDidox) {
+          setState("app");
+        } else {
+          setState("didox_login");
+        }
       })
       .catch((e: Error) => {
-        setTgError(e.message);
-        setTgLoading(false);
+        setError(e.message);
+        setState("error");
       });
-  }, [tokens]);
+  }, []);
 
+  // 🔄 обновление токенов
   const handleTokensRefreshed = (t: AuthTokens) => {
     saveTokens(t);
     setTokens(t);
   };
 
+  // ❌ если JWT умер
   const handleAuthFailed = () => {
     clearTokens();
-    setTokens(null);
-    setPage("login");
-    setTgError("Сессия истекла, перезапустите приложение");
+    localStorage.removeItem("didox_auth");
+    setState("didox_login");
   };
 
-  if (tgLoading) {
+  // ✅ успешный Didox логин
+  const handleDidoxSuccess = () => {
+    localStorage.setItem("didox_auth", "true");
+    setState("app");
+  };
+
+  // 🚪 logout
+  const handleLogout = () => {
+    localStorage.removeItem("didox_auth");
+    setState("didox_login");
+  };
+
+  // ── UI ─────────────────────────────────────
+
+  if (state === "loading") {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-          <p className="text-zinc-400 text-sm font-medium tracking-wide">Инициализация...</p>
-        </div>
+        <p className="text-zinc-400">Инициализация...</p>
       </div>
     );
   }
 
-  if (tgError) {
+  if (state === "error") {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-400 text-xl">!</span>
-          </div>
-          <p className="text-zinc-300 font-medium mb-1">Ошибка авторизации</p>
-          <p className="text-zinc-500 text-sm">{tgError}</p>
-        </div>
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <p className="text-red-400">{error}</p>
       </div>
     );
   }
 
-  if (page === "login") {
+  if (state === "didox_login") {
     return (
       <LoginPage
         tokens={tokens!}
         onTokensRefreshed={handleTokensRefreshed}
         onAuthFailed={handleAuthFailed}
-        onSuccess={() => setPage("create")}
+        onSuccess={handleDidoxSuccess}
       />
     );
   }
@@ -99,7 +109,7 @@ export default function App() {
       tokens={tokens!}
       onTokensRefreshed={handleTokensRefreshed}
       onAuthFailed={handleAuthFailed}
-      onLogout={() => setPage("login")}
+      onLogout={handleLogout}
     />
   );
 }
