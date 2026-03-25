@@ -6,7 +6,6 @@ import { inputClass } from "./LoginPage";
 import { API_BASE, type AuthTokens } from "../utils/consts";
 import { authFetch } from "../utils/auth-fetch";
 
-// ── Types & Constants ──────────────────────────────────────────────────────
 
 interface CreateDocumentPageProps {
   tokens: AuthTokens;
@@ -109,7 +108,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
               <polyline points="14 2 14 8 20 8" />
             </svg>
           </div>
-          <p className="text-white font-bold text-sm leading-none">Создать документ</p>
+          <p className="text-white font-bold text-sm leading-none">Хужжат яратиш</p>
         </div>
         <button
           onClick={onLogout}
@@ -129,40 +128,40 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
       {/* Form */}
       <div className="flex-1 px-6 py-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <SectionLabel label="Получатель" />
+          <SectionLabel label="Ҳамкорнинг СТИР/ПИНФЛ" />
           <Field label="ИНН / ПИНФЛ получателя" error={errors.tin_or_pinfl?.message}>
             <input {...register("tin_or_pinfl")} inputMode="numeric" placeholder="123456789" className={inputClass(!!errors.tin_or_pinfl)} />
           </Field>
 
           <SectionLabel label="Сведения о документе" />
-          <Field label="Номер документа *" error={errors.document_number?.message}>
+          <Field label="Хужжат раками *" error={errors.document_number?.message}>
             <input {...register("document_number")} placeholder="DOC-001" className={inputClass(!!errors.document_number)} />
           </Field>
-          <Field label="Дата документа *" error={errors.document_date?.message}>
+          <Field label="Ҳужжат санаси *" error={errors.document_date?.message}>
             <input {...register("document_date")} type="date" className={`${inputClass(!!errors.document_date)} [color-scheme:dark]`} />
           </Field>
-          <Field label="Название документа" error={errors.document_name?.message}>
+          <Field label="Ҳужжат номи" error={errors.document_name?.message}>
             <input {...register("document_name")} placeholder="Необязательно" className={inputClass(!!errors.document_name)} />
           </Field>
-          <Field label="Тип документа" error={errors.document_type?.message}>
+          <Field label="Хужжатнинг кушимча тури" error={errors.document_type?.message}>
             <select {...register("document_type")} className={`${inputClass(!!errors.document_type)} appearance-none`}>
               <option value="" className="bg-zinc-900">Выберите тип</option>
               {DOCUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value} className="bg-zinc-900">{t.label}</option>
+                <option selected={t.value == "other"} key={t.value} value={t.value} className="bg-zinc-900">{t.label}</option>
               ))}
             </select>
           </Field>
 
-          <SectionLabel label="Договор (необязательно)" />
-          <Field label="Номер договора" error={errors.contract_number?.message}>
+          <SectionLabel label="Шартнома (мажбурий эмас)" />
+          <Field label="Шартнома рақами" error={errors.contract_number?.message}>
             <input {...register("contract_number")} placeholder="CNT-001" className={inputClass(!!errors.contract_number)} />
           </Field>
-          <Field label="Дата договора" error={errors.contract_date?.message}>
+          <Field label="Шартнома санаси" error={errors.contract_date?.message}>
             <input {...register("contract_date")} type="date" className={`${inputClass(!!errors.contract_date)} [color-scheme:dark]`} />
           </Field>
 
           <SectionLabel label="Файл" />
-          <Field label="Прикрепить файл *" error={errors.file?.message as string | undefined}>
+          <Field label="Файл бириктириш *" error={errors.file?.message as string | undefined}>
             <label className={`flex items-center gap-3 cursor-pointer w-full bg-zinc-900 border rounded-xl px-4 py-3.5 transition-all ${errors.file ? "border-red-500/60" : "border-zinc-800 hover:border-emerald-500/50"}`}>
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -174,7 +173,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
               <div className="flex-1 min-w-0">
                 {fileName
                   ? <p className="text-emerald-400 text-sm font-medium truncate">{fileName}</p>
-                  : <p className="text-zinc-500 text-sm">Нажмите для выбора файла</p>}
+                  : <p className="text-zinc-500 text-sm">Файл танлаш учун босинг</p>}
               </div>
               <input
                 type="file"
@@ -206,7 +205,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <p className="text-emerald-400 text-sm font-medium">Документ успешно отправлен!</p>
+              <p className="text-emerald-400 text-sm font-medium">Хужжат муваффақиятли юборилди!</p>
             </div>
           )}
 
@@ -219,7 +218,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Отправка...
+                  Юбориляпти...
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
@@ -227,7 +226,7 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
-                  Отправить документ
+                  Хужжат Юбориш
                 </span>
               )}
             </button>
