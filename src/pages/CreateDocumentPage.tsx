@@ -34,7 +34,6 @@ const schema = z.object({
     .min(9, "Минимум 9 символов")
     .max(14, "Максимум 14 символов")
     .regex(/^\d+$/, "Только цифры")
-    .optional()
     .or(z.literal("")),
   document_number: z.string().min(1, "Обязательное поле"),
   document_date: z.string().min(1, "Укажите дату"),
@@ -128,8 +127,8 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
       {/* Form */}
       <div className="flex-1 px-6 py-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <SectionLabel label="Ҳамкорнинг СТИР/ПИНФЛ" />
-          <Field label="ИНН / ПИНФЛ получателя" error={errors.tin_or_pinfl?.message}>
+          <SectionLabel label="Ҳамкорнинг маълумотлари" />
+          <Field label="ИНН / ПИНФЛ *" error={errors.tin_or_pinfl?.message}>
             <input {...register("tin_or_pinfl")} inputMode="numeric" placeholder="123456789" className={inputClass(!!errors.tin_or_pinfl)} />
           </Field>
 
