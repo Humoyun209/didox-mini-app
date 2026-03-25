@@ -11,7 +11,6 @@ export default function App() {
   const [tokens, setTokens] = useState<AuthTokens | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 🚀 ВСЕГДА делаем Telegram auth при старте
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
 
@@ -35,7 +34,6 @@ export default function App() {
         saveTokens(t); // можно оставить, но не критично
         setTokens(t);
 
-        // 👉 проверяем Didox авторизацию
         const hasDidox = localStorage.getItem("didox_auth") === "true";
 
         if (hasDidox) {
@@ -50,32 +48,26 @@ export default function App() {
       });
   }, []);
 
-  // 🔄 обновление токенов
   const handleTokensRefreshed = (t: AuthTokens) => {
     saveTokens(t);
     setTokens(t);
   };
 
-  // ❌ если JWT умер
   const handleAuthFailed = () => {
     clearTokens();
     localStorage.removeItem("didox_auth");
     setState("didox_login");
   };
 
-  // ✅ успешный Didox логин
   const handleDidoxSuccess = () => {
     localStorage.setItem("didox_auth", "true");
     setState("app");
   };
 
-  // 🚪 logout
   const handleLogout = () => {
     localStorage.removeItem("didox_auth");
     setState("didox_login");
   };
-
-  // ── UI ─────────────────────────────────────
 
   if (state === "loading") {
     return (
