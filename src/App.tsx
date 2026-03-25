@@ -9,11 +9,16 @@ import { API_BASE, type AuthTokens } from "./utils/consts";
 
 export default function App() {
   const [page, setPage] = useState<"login" | "create">("login");
-  const [tokens, setTokens] = useState(() => loadTokens());
+  const [tokens, setTokens] = useState<AuthTokens | null>(() => loadTokens());
   const [tgLoading, setTgLoading] = useState(() => loadTokens() === null);
   const [tgError, setTgError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Skip Telegram auth if we already have valid tokens
+    if (tokens) {
+      return;
+    }
+
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
@@ -39,7 +44,7 @@ export default function App() {
         setTgError(e.message);
         setTgLoading(false);
       });
-  }, []);
+  }, [tokens]);
 
   const handleTokensRefreshed = (t: AuthTokens) => {
     saveTokens(t);
