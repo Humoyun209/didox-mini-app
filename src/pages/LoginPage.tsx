@@ -52,10 +52,7 @@ export default function LoginPage({ tokens, onTokensRefreshed, onAuthFailed, onS
         const err = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(err.detail || "Неверный логин или пароль");
       }
-
-      // Сохраняем токены после успешного логина
-      const data_res = await res.json() as { access: string; refresh: string };
-      onTokensRefreshed({ access: data_res.access, refresh: data_res.refresh });
+      
       onSuccess();
     } catch (e) {
       setServerError((e as Error).message);
