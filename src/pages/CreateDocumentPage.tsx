@@ -3,7 +3,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { inputClass } from "./LoginPage";
-import { API_BASE, API_BASE_MEDIA, type AuthTokens } from "../utils/consts";
+import { API_BASE, type AuthTokens } from "../utils/consts";
 import { authFetch } from "../utils/auth-fetch";
 
 interface CreateDocumentPageProps {
