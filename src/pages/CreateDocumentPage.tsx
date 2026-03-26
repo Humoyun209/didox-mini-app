@@ -393,7 +393,7 @@ export default function CreateDocumentPage({
                       }`}
                     >
 
-                      <span className="text-white">File URL: {API_BASE_MEDIA}{documents[0].file}</span>
+                      {/* <span className="text-white">File URL: {API_BASE_MEDIA}{documents[0].file}</span> */}
                       
                       {/* Radio indicator */}
                       <div
