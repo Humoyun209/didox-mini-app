@@ -94,30 +94,12 @@ export default function CreateDocumentPage({
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
     setFileError(null);
-
-    let fileToSend: File | null = null;
-
-    if (mode === "select" && selectedDocId) {
-      const doc = documents.find((d) => d.id === selectedDocId);
-      if (doc?.file) {
-        try {
-          const res = await fetch(`https://smart-bot-api.vincere.uz/media/user/documents/2026/03/26/Iltimosnoma_Videomateriallar_ekspertizasi_tayinlash_to%CA%BBg%CA%BBrisida.pdf`);
-          if (!res.ok) throw new Error("Не удалось скачать файл выбранного документа");
-          const blob = await res.blob();
-          fileToSend = new File([blob], doc.name || "document.pdf", { type: blob.type });
-        } catch (e) {
-          setServerError((e as Error).message);
-          return;
-        }
-      }
-    } else if (mode === "upload" && data.file?.[0]) {
-      fileToSend = data.file[0];
+    if (mode === "upload" && !data.file?.[0]) {
+      setFileError("Файл танлаш мажбурий");
+      return;
     }
-
-    if (!fileToSend) {
-      setFileError(
-        mode === "select" ? "Хужжат танланг" : "Файл танлаш мажбурий"
-      );
+    if (mode === "select" && !selectedDocId) {
+      setFileError("Хужжат танланг");
       return;
     }
 
@@ -125,7 +107,11 @@ export default function CreateDocumentPage({
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("file", fileToSend);
+      if (mode === "upload" && data.file?.[0]) {
+        formData.append("file", data.file[0]);
+      } else if (mode === "select" && selectedDocId) {
+        formData.append("source_document_id", String(selectedDocId));
+      }
       formData.append("document_number", data.document_number);
       formData.append("document_date", data.document_date);
       if (data.document_name) formData.append("document_name", data.document_name);
