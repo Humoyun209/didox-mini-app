@@ -101,7 +101,7 @@ export default function CreateDocumentPage({
       const doc = documents.find((d) => d.id === selectedDocId);
       if (doc?.file) {
         try {
-          const res = await fetch(`${API_BASE_MEDIA}/${doc.file}`);
+          const res = await fetch(`${API_BASE_MEDIA}${doc.file}`);
           if (!res.ok) throw new Error("Не удалось скачать файл выбранного документа");
           const blob = await res.blob();
           fileToSend = new File([blob], doc.name || "document.pdf", { type: blob.type });
