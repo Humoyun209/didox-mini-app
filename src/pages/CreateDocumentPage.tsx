@@ -365,7 +365,7 @@ export default function CreateDocumentPage({
             </Field>
           )}
 
-          <span className="text-white">File URL: {API_BASE_MEDIA}{documents[0].file}</span>
+          
 
           {/* Select mode */}
           {mode === "select" && (
@@ -392,6 +392,8 @@ export default function CreateDocumentPage({
                           : "border-zinc-800 hover:border-zinc-600"
                       }`}
                     >
+
+                      <span className="text-white">File URL: {API_BASE_MEDIA}{documents[0].file}</span>
                       
                       {/* Radio indicator */}
                       <div
