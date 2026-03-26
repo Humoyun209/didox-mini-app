@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { inputClass } from "./LoginPage";
 import { API_BASE, type AuthTokens } from "../utils/consts";
 import { authFetch } from "../utils/auth-fetch";
@@ -46,10 +46,12 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-// ── Component ──────────────────────────────────────────────────────────────
 
 export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFailed, onLogout }: CreateDocumentPageProps) {
   const [loading, setLoading] = useState(false);
+  const [documents, setDocuments] = useState<{ id: number; name: string; file: string, created_at: string }[]>([]);
+  const [mode, setMode] = useState<"upload" | "select">("upload");
+  const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -58,44 +60,89 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = async (data: FormValues) => {
-    setLoading(true);
-    setServerError(null);
-    try {
-      const formData = new FormData();
-      if (data.file?.[0]) formData.append("file", data.file[0]);
-      formData.append("document_number", data.document_number);
-      formData.append("document_date", data.document_date);
-      if (data.document_name) formData.append("document_name", data.document_name);
-      if (data.document_type) formData.append("document_type", data.document_type);
-      if (data.contract_number) formData.append("contract_number", data.contract_number);
-      if (data.contract_date) formData.append("contract_date", data.contract_date);
-      if (data.tin_or_pinfl) formData.append("tin_or_pinfl", data.tin_or_pinfl);
-
+  useEffect(() => {
+    const loadDocs = async () => {
       const res = await authFetch(
-        `${API_BASE}/create/document/`,
-        { method: "POST", body: formData },
+        `${API_BASE}/created/documents/`,
+        { method: "GET" },
         tokens,
         onTokensRefreshed,
         onAuthFailed
       );
 
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { detail?: string };
-        throw new Error(err.detail || "Ошибка при создании документа");
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data.results || []);
       }
+    };
 
-      setSuccess(true);
-      reset();
-      setFileName(null);
-      setTimeout(() => setSuccess(false), 4000);
-    } catch (e) {
-      setServerError((e as Error).message);
-    } finally {
-      setLoading(false);
+    loadDocs();
+  }, []);
+
+const onSubmit = async (data: FormValues) => {
+  setLoading(true);
+  setServerError(null);
+
+  try {
+    let fileToSend: File | null = null;
+
+    if (mode === "select" && selectedDocId) {
+      const doc = documents.find((d) => d.id === selectedDocId);
+      if (doc?.file) {
+        const res = await fetch(doc.file);
+        if (!res.ok) throw new Error("Не удалось скачать файл выбранного документа");
+        const blob = await res.blob();
+        fileToSend = new File([blob], doc.name || "document.pdf", { type: blob.type });
+      }
     }
-  };
 
+    if (data.file?.[0]) {
+      fileToSend = data.file[0];
+    }
+
+    // Проверка: файл обязателен
+    if (!fileToSend) {
+      throw new Error("Файл обязателен для отправки");
+    }
+
+    // Формируем FormData
+    const formData = new FormData();
+    formData.append("file", fileToSend);
+    formData.append("document_number", data.document_number);
+    formData.append("document_date", data.document_date);
+    if (data.document_name) formData.append("document_name", data.document_name);
+    if (data.document_type) formData.append("document_type", data.document_type);
+    if (data.contract_number) formData.append("contract_number", data.contract_number);
+    if (data.contract_date) formData.append("contract_date", data.contract_date);
+    if (data.tin_or_pinfl) formData.append("tin_or_pinfl", data.tin_or_pinfl);
+
+    // Отправка на сервер
+    const res = await authFetch(
+      `${API_BASE}/create/document/`,
+      { method: "POST", body: formData },
+      tokens,
+      onTokensRefreshed,
+      onAuthFailed
+    );
+
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { detail?: string };
+      throw new Error(err.detail || "Ошибка при создании документа");
+    }
+
+    // Успех
+    setSuccess(true);
+    reset();
+    setFileName(null);
+    setSelectedDocId(null);
+    setTimeout(() => setSuccess(false), 4000);
+
+  } catch (e) {
+    setServerError((e as Error).message);
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
       {/* Header */}
@@ -159,6 +206,15 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
             <input {...register("contract_date")} type="date" className={`${inputClass(!!errors.contract_date)} [color-scheme:dark]`} />
           </Field>
 
+          <div className="flex gap-2 mb-3">
+            <button type="button" onClick={() => setMode("upload")}>
+              Upload
+            </button>
+            <button type="button" onClick={() => setMode("select")}>
+              Select
+            </button>
+          </div>
+
           <SectionLabel label="Файл" />
           <Field label="Файл бириктириш *" error={errors.file?.message as string | undefined}>
             <label className={`flex items-center gap-3 cursor-pointer w-full bg-zinc-900 border rounded-xl px-4 py-3.5 transition-all ${errors.file ? "border-red-500/60" : "border-zinc-800 hover:border-emerald-500/50"}`}>
@@ -174,6 +230,24 @@ export default function CreateDocumentPage({ tokens, onTokensRefreshed, onAuthFa
                   ? <p className="text-emerald-400 text-sm font-medium truncate">{fileName}</p>
                   : <p className="text-zinc-500 text-sm">Файл танлаш учун босинг</p>}
               </div>
+              {mode === "select" && (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      onClick={() => setSelectedDocId(doc.id)}
+                      className={`p-2 border cursor-pointer ${
+                        selectedDocId === doc.id ? "border-green-500" : "border-zinc-700"
+                      }`}
+                    >
+                      <p>{doc.name.slice(0, 100)}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
               <input
                 type="file"
                 accept="application/pdf"
