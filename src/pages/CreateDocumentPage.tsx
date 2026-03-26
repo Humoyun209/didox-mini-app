@@ -95,7 +95,6 @@ export default function CreateDocumentPage({
     setServerError(null);
     setFileError(null);
 
-    // ── Resolve file ──────────────────────────────────────────────────────
     let fileToSend: File | null = null;
 
     if (mode === "select" && selectedDocId) {
