@@ -3,6 +3,7 @@ import LoginPage from "./pages/LoginPage";
 import CreateDocumentPage from "./pages/CreateDocumentPage";
 import { saveTokens, clearTokens } from "./utils/auth";
 import { API_BASE, type AuthTokens } from "./utils/consts";
+import { authFetch } from "./utils/auth-fetch";
 
 type AppState = "loading" | "didox_login" | "app" | "error";
 
@@ -64,9 +65,21 @@ export default function App() {
     setState("app");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("didox_auth");
-    setState("didox_login");
+  const handleLogout = async () => {
+  try {
+      await authFetch(
+        `${API_BASE}/didox/logout/`,
+        { method: "POST" },
+        tokens!,
+        handleTokensRefreshed,
+        handleAuthFailed
+      );
+    } catch {
+      // игнорируем ошибку — всё равно разлогиниваем
+    } finally {
+      localStorage.removeItem("didox_auth");
+      setState("didox_login");
+    }
   };
 
   if (state === "loading") {
