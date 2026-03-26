@@ -101,7 +101,7 @@ export default function CreateDocumentPage({
       const doc = documents.find((d) => d.id === selectedDocId);
       if (doc?.file) {
         try {
-          const res = await fetch(`${API_BASE_MEDIA}${doc.file}`);
+          const res = await fetch(`https://smart-bot-api.vincere.uz/media/user/documents/2026/03/26/Iltimosnoma_Videomateriallar_ekspertizasi_tayinlash_to%CA%BBg%CA%BBrisida.pdf`);
           if (!res.ok) throw new Error("Не удалось скачать файл выбранного документа");
           const blob = await res.blob();
           fileToSend = new File([blob], doc.name || "document.pdf", { type: blob.type });
